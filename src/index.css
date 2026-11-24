@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-950: #090e18;
+  --color-navy-900: #0f1626;
+  --color-navy-850: #131b2d;
+  --color-navy-800: #172137;
+  --color-navy-700: #1f2c47;
+  --color-navy-600: #2c3c5e;
+  --color-accent: #f28c28;
+  --color-accent-hover: #ff9e42;
+  --color-steel: #8b9bb4;
+  --font-sans: "Segoe UI", "Inter", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--color-navy-950);
+  background-image:
+    linear-gradient(rgba(139, 155, 180, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 155, 180, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(242, 140, 40, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2c3c5e transparent;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid var(--color-navy-600);
+  border-radius: 6px;
+  padding: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.75);
+  cursor: pointer;
+}
+
+select option {
+  background: var(--color-navy-900);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in 0.18s ease-out;
+}
+
+.checker {
+  background-color: #0b111d;
+  background-image:
+    linear-gradient(45deg, #111a2b 25%, transparent 25%),
+    linear-gradient(-45deg, #111a2b 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #111a2b 75%),
+    linear-gradient(-45deg, transparent 75%, #111a2b 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
