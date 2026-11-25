@@ -69,7 +69,7 @@ export function UserChooser({ users }: { users: UsersStore }) {
 }
 
 // ------------------------------------------------------------------ Header menu
-export function UserMenu({ users, onOpenData }: { users: UsersStore; onOpenData: () => void }) {
+export function UserMenu({ users, onOpenData, onOpenBackup }: { users: UsersStore; onOpenData: () => void; onOpenBackup: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -122,6 +122,16 @@ export function UserMenu({ users, onOpenData }: { users: UsersStore; onOpenData:
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-navy-700"
             >
               <Icon name="folder" className="h-4 w-4 text-steel" /> Données / import de la liste
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onOpenBackup();
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-navy-700"
+            >
+              <Icon name="save" className="h-4 w-4 text-accent" /> Sauvegarde / restauration (.zip)
             </button>
             <button
               type="button"

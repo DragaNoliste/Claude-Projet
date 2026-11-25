@@ -169,6 +169,17 @@ Chaque projet (photos comprises) est enregistré automatiquement. Bouton *Histor
 
 ---
 
+## Où sont mes données ? Sauvegarde
+
+Toutes les données (utilisateurs, projets photo, rapports, photos originales, listes, paramètres) sont enregistrées **uniquement dans le navigateur de cet ordinateur**, à l'adresse `http://localhost:5173`. Rien n'est envoyé sur Internet.
+
+- **Bouton Enregistrer** (ou `Ctrl+S`) : enregistre immédiatement ; l'enregistrement automatique reste actif.
+- **Sauvegarde** : menu utilisateur (en haut à droite) → *Sauvegarde / restauration* → **Sauvegarder toutes les données** : un fichier `.zip` à copier sur une clé USB, un disque ou OneDrive.
+- **Restauration** : même fenêtre → *Choisir un fichier de sauvegarde* → **Restaurer** (les éléments de la sauvegarde remplacent ceux qui ont le même identifiant ; le reste est conservé).
+
+> Vider les données de navigation du navigateur efface tout : faites une sauvegarde régulière. Les données sont propres à chaque navigateur (Chrome ≠ Edge).
+> L'application utilise toujours le port 5173 ; si `Lancer.bat` signale que le port est occupé, fermez l'autre fenêtre de l'application.
+
 ## Qualité d'image
 
 - L'export repart toujours du **fichier original** en pleine résolution (l'aperçu utilise une copie réduite pour la rapidité).

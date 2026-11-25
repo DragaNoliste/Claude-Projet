@@ -137,6 +137,28 @@ function colAnchor(c1: number, px: number) {
   return c - 1 + px / colPx(c);
 }
 
+/** Split columns A..P into `n` side-by-side photo slots of (nearly) equal width. */
+function photoSlots(n: number): [number, number][] {
+  const total = WIDTHS.reduce((t, _, i) => t + colPx(i + 1), 0);
+  const slots: [number, number][] = [];
+  let start = 1;
+  let acc = 0;
+  for (let c = 1; c <= 16; c++) {
+    acc += colPx(c);
+    const target = (total * (slots.length + 1)) / n;
+    const remainingCols = 16 - c;
+    const remainingSlots = n - slots.length - 1;
+    const next = c < 16 ? colPx(c + 1) : 0;
+    // close the slot when we are closest to the target (and enough columns are left for the others)
+    if (slots.length < n - 1 && (Math.abs(acc - target) <= Math.abs(acc + next - target) || remainingCols <= remainingSlots)) {
+      slots.push([start, c]);
+      start = c + 1;
+    }
+  }
+  slots.push([start, 16]);
+  return slots;
+}
+
 async function imageSize(blob: Blob) {
   const bmp = await createImageBitmap(blob);
   const s = { w: bmp.width, h: bmp.height };
@@ -451,31 +473,32 @@ async function addDaySheet(wb: Workbook, r: DailyReport, s: ReportSettings, all:
   row++;
   H(ws, row++, 14.1);
 
-  // ---------------- Photo report (4 per row)
+  // ---------------- Photo report (2, 3 or 4 large photos per row, 4K images)
   const photoTop = row;
   put(ws, `A${row}:P${row}`, 'REPORTAGE PHOTOGRAPHIQUE', { size: 14, bold: true, color: C.white, bg: C.navy, grid: null });
   H(ws, row++, 26.1);
-  const SLOTS: [number, number][] = [
-    [1, 4],
-    [5, 8],
-    [9, 13],
-    [14, 16],
-  ];
+  const perRow = s.excelPhotosPerRow ?? 2;
+  const SLOTS = photoSlots(perRow);
+  // Excel rows are limited to 409 pt: 2 per row = very large photos.
+  // Excel rows are limited to 409 pt: in 2-per-row mode each photo spans 2 rows to fill its wide slot.
+  const rowPt = perRow === 2 ? 345 : perRow === 3 ? 300 : 200.1;
+  const span = perRow === 2 ? 2 : 1;
+  const areaPx = (span * rowPt * 4) / 3;
   for (const p of [...P, '']) {
     const list = r.photos.filter((ph) => (r.activities.find((a) => a.id === ph.activityId)?.projet ?? '') === p);
     if (!list.length) continue;
     put(ws, `A${row}:P${row}`, p || 'AUTRES PHOTOS', { size: 13, bold: true, italic: true, color: C.navy, bg: C.light, grid: C.photoGrid });
     H(ws, row++, 21.95);
-    for (let i = 0; i < list.length; i += 4) {
+    for (let i = 0; i < list.length; i += perRow) {
       const imgRow = row;
-      const rowPt = 200.1;
-      H(ws, imgRow, rowPt);
-      H(ws, imgRow + 1, 30);
-      for (let k = 0; k < 4; k++) {
+      for (let k = 0; k < span; k++) H(ws, imgRow + k, rowPt);
+      const capRow = imgRow + span;
+      H(ws, capRow, 30);
+      for (let k = 0; k < perRow; k++) {
         const [c1, c2] = SLOTS[k];
         const ph = list[i + k];
-        put(ws, `${colName(c1)}${imgRow}:${colName(c2)}${imgRow}`, null, { italic: true, color: 'FF9E9E9E', bg: C.white, grid: C.photoGrid });
-        put(ws, `${colName(c1)}${imgRow + 1}:${colName(c2)}${imgRow + 1}`, ph?.caption ?? null, { size: 10, bold: true, color: C.text, bg: C.caption, grid: C.photoGrid });
+        put(ws, `${colName(c1)}${imgRow}:${colName(c2)}${capRow - 1}`, null, { italic: true, color: 'FF9E9E9E', bg: C.white, grid: C.photoGrid });
+        put(ws, `${colName(c1)}${capRow}:${colName(c2)}${capRow}`, ph?.caption ?? null, { size: 10, bold: true, color: C.text, bg: C.caption, grid: C.photoGrid });
         if (!ph) continue;
         // HD rendering from the original, with Projet / Désignation / Repère / Tâche of its activity line.
         let hd: Awaited<ReturnType<typeof reportPhotoHD>>;
@@ -486,14 +509,14 @@ async function addDaySheet(wb: Workbook, r: DailyReport, s: ReportSettings, all:
           continue;
         }
         const slotW = Array.from({ length: c2 - c1 + 1 }, (_, j) => colPx(c1 + j)).reduce((t, x) => t + x, 0);
-        const boxH = (rowPt * 4) / 3 - 10;
-        const sc = Math.min((slotW - 12) / hd.width, boxH / hd.height);
+        const boxH = areaPx - 12;
+        const sc = Math.min((slotW - 16) / hd.width, boxH / hd.height);
         const w = Math.round(hd.width * sc);
         const h = Math.round(hd.height * sc);
         const id = wb.addImage({ buffer: (await hd.blob.arrayBuffer()) as never, extension: 'jpeg' });
-        ws.addImage(id, { tl: { col: colAnchor(c1, (slotW - w) / 2), row: imgRow - 1 + (5 + (boxH - h) / 2) / ((rowPt * 4) / 3) }, ext: { width: w, height: h } });
+        ws.addImage(id, { tl: { col: colAnchor(c1, (slotW - w) / 2), row: imgRow - 1 + ((6 + (boxH - h) / 2) / areaPx) * span }, ext: { width: w, height: h } });
       }
-      row += 2;
+      row = capRow + 1;
     }
   }
   if (row > photoTop + 1) ws.getRow(photoTop - 1).addPageBreak();

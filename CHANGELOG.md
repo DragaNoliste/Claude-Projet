@@ -1,5 +1,15 @@
 # Historique des versions
 
+## 2.1.0 — 25/11/2026
+
+- Bouton **Enregistrer** dans l'en-tête (et raccourci **Ctrl+S**), pour les photos et les rapports ; l'enregistrement automatique reste actif.
+- **Photos Excel en 4K** (jusqu'à 3840 px, résolution d'origine conservée) et **plus grandes** : 2 photos par ligne par défaut,
+  chaque photo sur 2 lignes (≈ 1210 × 910 px affichés). Réglable dans Paramètres : 2, 3 ou 4 photos par ligne.
+- **Sauvegarde / restauration** (menu utilisateur, en haut à droite) : toutes les données — utilisateurs, projets photo,
+  rapports, photos originales, listes et paramètres — dans un fichier `.zip`, réimportable (fusion, rien n'est supprimé).
+- **Port fixe 5173** : les données étant liées à `http://localhost:5173`, l'application ne démarre plus sur un autre port
+  (page vide). `Lancer.bat` ouvre l'application déjà lancée au lieu d'en démarrer une seconde.
+
 ## 2.0.0 — 25/11/2026 (Version 2 : rapports journaliers)
 
 - Nouveau module **Rapports** (bouton Photos / Rapports en haut) : le rapport journalier d'avancement des travaux complet, au format du fichier « Daily Report ».

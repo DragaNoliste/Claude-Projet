@@ -3,6 +3,7 @@ import { useProject } from './hooks/useProject';
 import { EquipmentContext, useUsers } from './hooks/useUsers';
 import { DataModal, UserChooser, UserMenu } from './components/UsersUI';
 import { ReportsApp } from './report/ReportsApp';
+import { BackupModal } from './components/BackupModal';
 import { useTaskLibrary } from './hooks/useTaskLibrary';
 import { ProjectPanel } from './components/ProjectPanel';
 import { StylePanel } from './components/StylePanel';
@@ -31,7 +32,41 @@ export default function App() {
   };
   const modeRef = useRef(mode);
   modeRef.current = mode;
-  const [modal, setModal] = useState<'history' | 'library' | 'shortcuts' | 'data' | null>(null);
+
+  // ------------------------------------------------------------ Save button (+ Ctrl+S)
+  const [reportsSave, setReportsSaveState] = useState<{ flush: () => Promise<void>; saving: boolean } | null>(null);
+  const setReportsSave = useCallback((api: { flush: () => Promise<void>; saving: boolean } | null) => setReportsSaveState(api), []);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSavingNow] = useState(false);
+  const busySaving = saving || store.saveState === 'saving' || !!reportsSave?.saving;
+  const saveAll = useCallback(async () => {
+    setSavingNow(true);
+    try {
+      await store.saveNow();
+      await reportsSave?.flush();
+      setSaved(true);
+      toast('Travail enregistré sur cet ordinateur.', 'success');
+    } catch {
+      toast('Échec de l’enregistrement.', 'error');
+    } finally {
+      setSavingNow(false);
+    }
+  }, [store, reportsSave]);
+  // Any new change makes the button active again.
+  useEffect(() => {
+    if (store.saveState === 'saving' || reportsSave?.saving) setSaved(false);
+  }, [store.saveState, reportsSave?.saving]);
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        void saveAll();
+      }
+    };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [saveAll]);
+  const [modal, setModal] = useState<'history' | 'library' | 'shortcuts' | 'data' | 'backup' | null>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [clipboard, setClipboard] = useState<Clipboard>(null);
@@ -292,7 +327,16 @@ export default function App() {
               <span className="hidden sm:inline">Exporter tout</span>
               <span className="sm:hidden">ZIP</span>
             </Button>
-            <div className="ml-1.5"><UserMenu users={users} onOpenData={() => setModal('data')} /></div>
+            <Button
+              variant={saved ? 'ghost' : 'secondary'}
+              icon={saved ? 'check' : 'save'}
+              onClick={() => void saveAll()}
+              title="Enregistrer maintenant (Ctrl+S) — l’enregistrement automatique reste actif"
+              className={`ml-1 max-sm:px-2 ${saved ? 'text-emerald-300' : ''}`}
+            >
+              <span className="hidden md:inline">{busySaving ? 'Enregistrement…' : saved ? 'Enregistré' : 'Enregistrer'}</span>
+            </Button>
+            <div className="ml-1.5"><UserMenu users={users} onOpenData={() => setModal('data')} onOpenBackup={() => setModal('backup')} /></div>
           </div>
         </div>
       </header>
@@ -300,7 +344,7 @@ export default function App() {
       {/* ================================================================ Main */}
       {mode === 'rapports' ? (
         <div className="flex-1">
-          <ReportsApp key={users.current.id} users={users} style={project.style} />
+          <ReportsApp key={users.current.id} users={users} style={project.style} onRegisterSave={setReportsSave} />
         </div>
       ) : (
       <main className="mx-auto grid w-full max-w-[1800px] flex-1 gap-4 p-3 sm:p-5 lg:grid-cols-[300px_minmax(0,1fr)_340px] xl:grid-cols-[330px_minmax(0,1fr)_380px]">
@@ -432,6 +476,14 @@ export default function App() {
       <TaskLibraryModal open={modal === 'library'} onClose={() => setModal(null)} library={library} />
       <ShortcutsModal open={modal === 'shortcuts'} onClose={() => setModal(null)} />
       <DataModal open={modal === 'data'} onClose={() => setModal(null)} users={users} />
+      <BackupModal
+        open={modal === 'backup'}
+        onClose={() => setModal(null)}
+        beforeAction={async () => {
+          await store.saveNow();
+          await reportsSave?.flush();
+        }}
+      />
       <Toaster />
     </div>
     </EquipmentContext.Provider>

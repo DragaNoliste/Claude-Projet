@@ -111,6 +111,8 @@ export interface ReportSettings {
   header: ReportHeader;
   /** Company logo at the top-left of the Excel report (data URL), taken from an imported Daily Report or uploaded. */
   headerLogo?: string;
+  /** Photos per row in the Excel photo report (2 = largest). */
+  excelPhotosPerRow?: 2 | 3 | 4;
   /** Annotate photos added to an activity with the current photo style. */
   annotatePhotos: boolean;
 }

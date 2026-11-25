@@ -21,9 +21,24 @@ if not exist "node_modules" (
   )
 )
 
+rem Vos donnees sont liees a l'adresse http://localhost:5173 : l'application utilise toujours ce port.
+netstat -ano | findstr /r /c:":5173 .*LISTENING" >nul
+if not errorlevel 1 (
+  echo L'application est deja lancee : ouverture de http://localhost:5173
+  start "" http://localhost:5173
+  timeout /t 3 >nul
+  exit /b 0
+)
+
 echo.
 echo Demarrage de l'application sur http://localhost:5173
 echo Fermez cette fenetre pour arreter l'application.
 echo.
 call npm run dev -- --open
+if errorlevel 1 (
+  echo.
+  echo [ERREUR] Le port 5173 est utilise par un autre programme.
+  echo Fermez l'autre fenetre de l'application ^(ou redemarrez le PC^), puis relancez ce fichier.
+  echo Vos donnees ne sont pas perdues : elles sont liees a http://localhost:5173.
+)
 pause

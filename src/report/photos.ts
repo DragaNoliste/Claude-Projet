@@ -14,8 +14,8 @@ import type { AnnotationFields, AnnotationStyle, PhotoData, ProjectRecord } from
 import type { Activity, DailyReport, ReportPhoto } from './types';
 
 export const DISPLAY_MAX = 1600;
-/** Long side of photos written to Excel (HD). */
-export const EXCEL_PHOTO_MAX = 2000;
+/** Long side of photos written to Excel: 4K (3840 px). */
+export const EXCEL_PHOTO_MAX = 3840;
 const THUMB = 320;
 
 async function decode(blob: Blob): Promise<ImageBitmap> {
@@ -125,7 +125,7 @@ export async function renderReportPhoto(p: ReportPhoto, fields: AnnotationFields
 /** HD JPEG for the Excel export. */
 export async function reportPhotoHD(p: ReportPhoto, fields: AnnotationFields | null, style: AnnotationStyle) {
   const c = await renderReportPhoto(p, fields, style, EXCEL_PHOTO_MAX);
-  const blob = await canvasToBlob(c, 'image/jpeg', 0.92);
+  const blob = await canvasToBlob(c, 'image/jpeg', 0.93);
   const out = { blob, width: c.width, height: c.height };
   c.width = c.height = 0;
   return out;

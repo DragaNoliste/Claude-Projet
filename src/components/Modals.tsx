@@ -229,6 +229,7 @@ export const SHORTCUTS: [string[], string][] = [
   [['Ctrl', 'Maj', 'C'], 'Copier les infos de la photo'],
   [['Ctrl', 'Maj', 'V'], 'Coller les infos copiées'],
   [['Espace'], 'Cocher / décocher la photo actuelle'],
+  [['Ctrl', 'S'], 'Enregistrer maintenant (photos et rapports)'],
   [['Ctrl', 'E'], 'Exporter la photo actuelle'],
   [['Ctrl', 'Maj', 'E'], 'Tout exporter en ZIP'],
   [['Suppr'], 'Retirer la photo actuelle'],

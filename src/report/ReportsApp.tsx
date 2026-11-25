@@ -315,6 +315,13 @@ function SettingsView({ rs }: { rs: ReportsStore }) {
               )}
             </div>
           </Field>
+          <Field label="Photos dans l’Excel" hint="Photos exportées en 4K (3840 px). Moins de photos par ligne = photos plus grandes.">
+            <select className={inputCls} value={s.excelPhotosPerRow ?? 2} onChange={(e) => setS({ ...s, excelPhotosPerRow: +e.target.value as 2 | 3 | 4 })}>
+              <option value={2}>2 par ligne — très grandes (recommandé)</option>
+              <option value={3}>3 par ligne — grandes</option>
+              <option value={4}>4 par ligne — format du modèle d’origine</option>
+            </select>
+          </Field>
           <div className="rounded-md border border-navy-700 px-3">
             <Toggle label="Annoter automatiquement les photos ajoutées à une activité" checked={s.annotatePhotos} onChange={(annotatePhotos) => setS({ ...s, annotatePhotos })} />
           </div>
@@ -341,9 +348,22 @@ function SettingsView({ rs }: { rs: ReportsStore }) {
 }
 
 // ------------------------------------------------------------------ Main
-export function ReportsApp({ users, style }: { users: UsersStore; style: AnnotationStyle }) {
+export function ReportsApp({
+  users,
+  style,
+  onRegisterSave,
+}: {
+  users: UsersStore;
+  style: AnnotationStyle;
+  /** Lets the header "Enregistrer" button (and Ctrl+S) save the reports immediately. */
+  onRegisterSave?: (api: { flush: () => Promise<void>; saving: boolean } | null) => void;
+}) {
   const user = users.current!;
   const rs = useReports(user.id, user.name, user.equipment);
+  useEffect(() => {
+    onRegisterSave?.({ flush: rs.flush, saving: rs.saving });
+  }, [rs.flush, rs.saving, onRegisterSave]);
+  useEffect(() => () => onRegisterSave?.(null), [onRegisterSave]);
   const equipOptions = useEquipmentOptions();
   const lookup = (label: string) => equipOptions.flatMap((g) => g.items).find((o) => o.label === label);
   const [tab, setTab] = useState<Tab>('day');

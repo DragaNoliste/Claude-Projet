@@ -56,6 +56,43 @@ async function withStore<T>(store: StoreName, mode: IDBTransactionMode, fn: (s: 
   return result;
 }
 
+/** Read every [key, value] of a store (used by the backup). */
+async function readAll<T>(store: StoreName): Promise<[IDBValidKey, T][]> {
+  const dbi = await openDB();
+  return new Promise((resolve, reject) => {
+    const out: [IDBValidKey, T][] = [];
+    const tx = dbi.transaction(store, 'readonly');
+    const req = tx.objectStore(store).openCursor();
+    req.onsuccess = () => {
+      const c = req.result;
+      if (!c) return;
+      out.push([c.primaryKey, c.value as T]);
+      c.continue();
+    };
+    tx.oncomplete = () => resolve(out);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Write many entries in one transaction (keyPath stores ignore the key). */
+async function writeAll(store: StoreName, entries: [IDBValidKey, unknown][]): Promise<void> {
+  if (!entries.length) return;
+  const dbi = await openDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = dbi.transaction(store, 'readwrite');
+    const s = tx.objectStore(store);
+    for (const [k, v] of entries) {
+      if (s.keyPath) s.put(v);
+      else s.put(v, k);
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+export const backupDb = { readAll, writeAll };
+
 export const db = {
   async getReport(id: string): Promise<DailyReport | undefined> {
     return withStore('kv', 'readonly', (s) => s.get('report:' + id) as IDBRequest<DailyReport | undefined>);
