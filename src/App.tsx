@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useProject } from './hooks/useProject';
 import { EquipmentContext, useUsers } from './hooks/useUsers';
 import { DataModal, UserChooser, UserMenu } from './components/UsersUI';
+import { ReportsApp } from './report/ReportsApp';
 import { useTaskLibrary } from './hooks/useTaskLibrary';
 import { ProjectPanel } from './components/ProjectPanel';
 import { StylePanel } from './components/StylePanel';
@@ -22,6 +23,14 @@ export default function App() {
   const library = useTaskLibrary();
   const { project } = store;
   const [tab, setTab] = useState<LeftTab>('project');
+  // V1 = photo annotation, V2 = daily reports
+  const [mode, setModeState] = useState<'photos' | 'rapports'>(() => (localStorage.getItem('ipa-mode') === 'rapports' ? 'rapports' : 'photos'));
+  const setMode = (m: 'photos' | 'rapports') => {
+    setModeState(m);
+    localStorage.setItem('ipa-mode', m);
+  };
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const [modal, setModal] = useState<'history' | 'library' | 'shortcuts' | 'data' | null>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -96,7 +105,7 @@ export default function App() {
   // ------------------------------------------------------------ Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (modal || !project) return;
+      if (modal || !project || modeRef.current !== 'photos') return;
       const editing = isEditableTarget(e.target);
       const ctrl = e.ctrlKey || e.metaKey;
       const k = e.key.toLowerCase();
@@ -152,7 +161,7 @@ export default function App() {
     let depth = 0;
     const hasFiles = (e: DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
     const enter = (e: DragEvent) => {
-      if (!hasFiles(e)) return;
+      if (!hasFiles(e) || modeRef.current !== 'photos') return;
       depth++;
       setDragging(true);
     };
@@ -162,10 +171,10 @@ export default function App() {
       if (!depth) setDragging(false);
     };
     const over = (e: DragEvent) => {
-      if (hasFiles(e)) e.preventDefault();
+      if (hasFiles(e) && modeRef.current === 'photos') e.preventDefault();
     };
     const drop = (e: DragEvent) => {
-      if (!hasFiles(e)) return;
+      if (!hasFiles(e) || modeRef.current !== 'photos') return;
       e.preventDefault();
       depth = 0;
       setDragging(false);
@@ -219,7 +228,28 @@ export default function App() {
             </div>
           </div>
 
-          <nav className="mx-auto hidden items-center gap-1 xl:flex" aria-label="Étapes">
+          <div className="flex shrink-0 rounded-md border border-navy-600 bg-navy-900 p-0.5" role="tablist" aria-label="Module">
+            {(
+              [
+                ['photos', 'image', 'Photos'],
+                ['rapports', 'list', 'Rapports'],
+              ] as const
+            ).map(([m, ic, label]) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${mode === m ? 'bg-accent text-navy-950' : 'text-slate-300 hover:text-white'}`}
+              >
+                <Icon name={ic} className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+
+          <nav className={`mx-auto hidden items-center gap-1 ${mode === 'photos' ? '2xl:flex' : ''}`} aria-label="Étapes">
             {steps.map((s, i) => (
               <div key={s.n} className="flex items-center gap-1">
                 <button
@@ -245,20 +275,20 @@ export default function App() {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button variant="ghost" icon="plus" onClick={() => void createNew()} title="Nouveau projet" className="max-sm:px-2">
+            <Button variant="ghost" icon="plus" onClick={() => void createNew()} title="Nouveau projet" className={`max-sm:px-2 ${mode !== 'photos' ? '!hidden' : ''}`}>
               <span className="hidden md:inline">Nouveau</span>
             </Button>
-            <Button variant="ghost" icon="history" onClick={() => setModal('history')} title="Historique des projets" className="max-sm:px-2">
+            <Button variant="ghost" icon="history" onClick={() => setModal('history')} title="Historique des projets" className={`max-sm:px-2 ${mode !== 'photos' ? '!hidden' : ''}`}>
               <span className="hidden md:inline">Historique</span>
             </Button>
-            <Button variant="ghost" icon="list" onClick={() => setModal('library')} title="Bibliothèque de tâches" className="max-sm:px-2">
+            <Button variant="ghost" icon="list" onClick={() => setModal('library')} title="Bibliothèque de tâches" className={`max-sm:px-2 ${mode !== 'photos' ? '!hidden' : ''}`}>
               <span className="hidden lg:inline">Tâches</span>
             </Button>
             <Button variant="ghost" icon="folder" onClick={() => setModal('data')} title="Données : importer la liste des équipements" className="max-sm:px-2">
               <span className="hidden lg:inline">Données</span>
             </Button>
-            <Button variant="ghost" icon="keyboard" onClick={() => setModal('shortcuts')} title="Raccourcis clavier (?)" className="max-sm:hidden" />
-            <Button variant="primary" icon="zip" disabled={!photos.length || !!progress} onClick={() => void runExport('all', 'zip')} className="ml-1">
+            <Button variant="ghost" icon="keyboard" onClick={() => setModal('shortcuts')} title="Raccourcis clavier (?)" className={`max-sm:hidden ${mode !== 'photos' ? '!hidden' : ''}`} />
+            <Button variant="primary" icon="zip" disabled={!photos.length || !!progress} onClick={() => void runExport('all', 'zip')} className={`ml-1 ${mode !== 'photos' ? '!hidden' : ''}`}>
               <span className="hidden sm:inline">Exporter tout</span>
               <span className="sm:hidden">ZIP</span>
             </Button>
@@ -268,6 +298,11 @@ export default function App() {
       </header>
 
       {/* ================================================================ Main */}
+      {mode === 'rapports' ? (
+        <div className="flex-1">
+          <ReportsApp key={users.current.id} users={users} style={project.style} />
+        </div>
+      ) : (
       <main className="mx-auto grid w-full max-w-[1800px] flex-1 gap-4 p-3 sm:p-5 lg:grid-cols-[300px_minmax(0,1fr)_340px] xl:grid-cols-[330px_minmax(0,1fr)_380px]">
         {/* ---------- Left: project / style / export */}
         <aside id="step-project" className="scroll-mt-20 space-y-4">
@@ -349,6 +384,7 @@ export default function App() {
           </Panel>
         </aside>
       </main>
+      )}
 
       <footer className="border-t border-navy-800 px-5 py-3 text-center text-[11px] text-slate-500">
         100 % local — vos photos ne quittent jamais cet ordinateur. Appuyez sur <span className="font-mono text-slate-400">?</span> pour les raccourcis clavier.

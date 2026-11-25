@@ -3,10 +3,14 @@
  *  - projects : ProjectRecord (metadata + per-photo text, no binaries)
  *  - blobs    : image binaries, keys "<photoId>:orig" | ":prev" | ":thumb"
  *  - kv       : settings (task library, templates, last project, default style)
+ *               + V2 daily reports under keys "report:<ownerId>:<yyyy-mm-dd>"
  */
 import type { ProjectRecord } from '../types';
+import type { DailyReport } from '../report/types';
 
 const DB_NAME = 'industrial-photo-annotator';
+// Version 1 on purpose: V2 reports live in the kv store (keys "report:<owner>:<date>"),
+// so the Version 1 app can still open the same database.
 const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -53,6 +57,31 @@ async function withStore<T>(store: StoreName, mode: IDBTransactionMode, fn: (s: 
 }
 
 export const db = {
+  async getReport(id: string): Promise<DailyReport | undefined> {
+    return withStore('kv', 'readonly', (s) => s.get('report:' + id) as IDBRequest<DailyReport | undefined>);
+  },
+  async putReport(r: DailyReport): Promise<void> {
+    await withStore('kv', 'readwrite', (s) => s.put(r, 'report:' + r.id));
+  },
+  async deleteReport(id: string): Promise<void> {
+    await withStore('kv', 'readwrite', (s) => s.delete('report:' + id));
+  },
+  async listReports(ownerId: string): Promise<DailyReport[]> {
+    const range = IDBKeyRange.bound(`report:${ownerId}:`, `report:${ownerId}:￿`);
+    const all = await withStore('kv', 'readonly', (s) => s.getAll(range) as IDBRequest<DailyReport[]>);
+    return all.filter((r) => r.ownerId === ownerId).sort((a, b) => a.date.localeCompare(b.date));
+  },
+  async deleteKeys(keys: string[]): Promise<void> {
+    if (!keys.length) return;
+    const dbi = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = dbi.transaction('blobs', 'readwrite');
+      const st = tx.objectStore('blobs');
+      for (const k of keys) st.delete(k);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
   async getProject(id: string): Promise<ProjectRecord | undefined> {
     return withStore('projects', 'readonly', (s) => s.get(id) as IDBRequest<ProjectRecord | undefined>);
   },

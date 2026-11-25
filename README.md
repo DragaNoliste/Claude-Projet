@@ -50,6 +50,28 @@ Le dossier `dist/` contient une version statique qui peut être hébergée sur n
 
 ---
 
+## Version 2 — Rapports journaliers (bouton **Rapports** en haut)
+
+Le module **Rapports** produit le rapport journalier d'avancement des travaux, au même format que le fichier Excel « Daily Report jj-mm-aaaa.xlsx », et garde l'historique de toute la semaine.
+
+| Onglet | Contenu |
+|---|---|
+| **Rapport du jour** | En-tête (n° d'affaire, atelier, établi par…), synthèse des projets, **effectif** par métier et par projet (matin / après-midi), activités du jour par projet, éléments en attente, suite des travaux, problèmes, HSE, reportage photo |
+| **Semaine** | Toutes les activités de la semaine (ex. semaine 48) ou d'un seul jour, filtres projet / statut / recherche, synthèse par équipement, suivi de chaque activité jour après jour |
+| **Effectif & heures** | Total des heures de la semaine et par jour, heures par projet et par métier, hommes-jours, effectif moyen / max, heures cumulées |
+| **Paramètres** | Projets, heures par demi-journée (ex. 4 h + 4 h, MHS 5 h + 4 h), heures cumulées de départ, métiers, en-tête par défaut |
+
+### Utilisation quotidienne
+
+1. Choisissez le jour dans la barre de la semaine, puis **Reprendre le rapport du …** : l'effectif, les activités non terminées et les éléments en attente de la veille sont repris (les jours d'attente sont mis à jour).
+2. Mettez à jour l'effectif et l'**avancement %** de chaque activité : le statut (terminé / en cours…) et les heures se calculent seuls.
+3. Ajoutez les photos avec le bouton **+** de chaque ligne : elles sont **annotées automatiquement** (Projet / Designation / Rep / Tache) avec le style de l'onglet Photos. Le bouton **Photos d'un projet** reprend aussi les photos déjà annotées dans l'onglet Photos.
+4. **Excel du jour** ou **Excel semaine** : le fichier est téléchargé, prêt à envoyer (une feuille par jour + RECAP_SEMAINE, RECAP_EFFECTIF, HISTORIQUE, photos incluses).
+
+**Importer vos anciens rapports :** bouton **Importer un rapport Excel**, choisissez un fichier « Daily Report …xlsx » puis cochez les jours (chaque feuille datée devient un rapport, photos comprises).
+
+> Heures du jour = effectif du matin × heures du matin + effectif de l'après-midi × heures de l'après-midi, par projet (réglable dans Paramètres).
+
 ## Utilisateurs et listes d'équipements
 
 Au démarrage, choisissez votre nom (**KHALID**, **NAJIB**…). Chaque utilisateur a **sa propre liste d'équipements**, son propre format de texte et **son propre historique de projets**. Pour changer : cliquez sur votre nom en haut à droite.

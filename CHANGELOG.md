@@ -1,5 +1,28 @@
 # Historique des versions
 
+## 2.0.0 — 25/11/2026 (Version 2 : rapports journaliers)
+
+- Nouveau module **Rapports** (bouton Photos / Rapports en haut) : le rapport journalier d'avancement des travaux complet, au format du fichier « Daily Report ».
+  - En-tête, synthèse des projets, **effectif** par métier × projet (matin / après-midi) avec **total des heures**, activités du jour par projet,
+    éléments en attente, suite des travaux, problèmes, HSE, reportage photo, validation.
+  - **Statut calculé automatiquement** à partir de l'avancement (100 % = terminé) : plus de #REF!.
+  - Photos ajoutées sur chaque ligne d'activité, **annotées automatiquement** (Projet / Designation / Rep / Tache) ; ou reprises depuis un projet photo.
+  - « Reprendre le rapport de la veille » : effectif + activités non terminées + éléments en attente (jours d'attente mis à jour).
+- **Vue semaine** (ex. semaine 48) : toutes les activités de la semaine ou d'un jour, filtres, synthèse par équipement, suivi de chaque activité jour après jour.
+- **Effectif & heures** : heures par jour, par projet, par métier, hommes-jours, heures cumulées ; heures par demi-journée réglables par projet.
+- **Export Excel** du jour et de la semaine (une feuille par jour + RECAP_SEMAINE, RECAP_EFFECTIF, HISTORIQUE), photos incluses, sans formules.
+- **Import des fichiers Excel existants** (feuilles datées), photos dans les cellules comprises.
+- **Main-d'œuvre** : une liste déroulante de métier par personne (autant de cases que NBR).
+- **Effectif automatique** depuis la main-d'œuvre des activités (SMP, PAP, PAT) ; chef d'atelier et contremaître = 1/1
+  si le projet a une activité, sinon 0 ; MHS et MS saisis à la main. Interrupteur pour repasser en saisie manuelle.
+- **Export Excel au design de la feuille « 25-11-2026 »** : logo, en-tête Arial bleu marine, cadres, effectif SMP · PAT · PAP · MHS · MS,
+  % d'avancement coloré selon le statut, bande orange « éléments en attente », photos 4 par ligne, A3 paysage.
+  Le logo est récupéré automatiquement à l'import d'un Daily Report (modifiable dans Paramètres).
+- **Photos HD annotées automatiquement** : l'original est conservé ; Projet / Désignation / Repère / Tâche de la ligne d'activité
+  sont dessinés à l'export en 2000 px. Éditeur d'annotation au clic sur une photo (valeurs remplaçables par photo),
+  bouton « Annoter toutes les photos ».
+- La Version 1 reste disponible (tag v1, branche version-1) et partage les mêmes données.
+
 ## 1.2.0 — 25/11/2026
 
 - **Utilisateurs KHALID et NAJIB** : écran « Qui utilise l'application ? » au démarrage, changement d'utilisateur depuis l'en-tête.

@@ -1,7 +1,7 @@
 {
   "name": "industrial-photo-annotator",
   "private": true,
-  "version": "1.2.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "Annotation de photos industrielles par lot pour rapports journaliers (100% local, dans le navigateur).",
   "scripts": {
@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "jszip": "^3.10.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
@@ -23,5 +24,8 @@
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

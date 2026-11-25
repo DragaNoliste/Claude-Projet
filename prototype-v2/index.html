@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maquette V2 — Rapport journalier & suivi hebdomadaire</title>
+<style>
+  :root {
+    --bg: #090e18; --panel: #0f1626; --panel2: #131b2d; --line: #1f2c47; --line2: #2c3c5e;
+    --text: #e2e8f0; --muted: #8b9bb4; --dim: #64748b; --accent: #f28c28;
+    --ok: #34d399; --run: #60a5fa; --wait: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, Arial, sans-serif;
+    background-image: linear-gradient(rgba(139,155,180,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(139,155,180,.035) 1px, transparent 1px); background-size: 32px 32px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 16px 20px 60px; }
+  header.top { position: sticky; top: 0; z-index: 20; background: rgba(9,14,24,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1500px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .logo { display: flex; gap: 10px; align-items: center; }
+  .logo b { letter-spacing: .14em; font-size: 13px; text-transform: uppercase; }
+  .logo small { display: block; color: var(--muted); font-size: 11px; }
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 2px 6px; border-radius: 4px; background: #7c3aed33; color: #c4b5fd; border: 1px solid #7c3aed66; }
+  nav.tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  nav.tabs button { background: none; border: 1px solid transparent; padding: 7px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); font-weight: 600; }
+  nav.tabs button.on { background: var(--panel2); border-color: var(--line2); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
+  .days { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 14px 0 6px; }
+  .days .wk { font-weight: 700; margin-right: 6px; }
+  .days .wk span { color: var(--muted); font-weight: 400; }
+  .chip { border: 1px solid var(--line2); background: var(--panel); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  .chip.on { border-color: var(--accent); background: #f28c2822; color: #fff; }
+  .chip.off { opacity: .45; cursor: not-allowed; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .grid { display: grid; gap: 14px; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 1000px) { .g2, .g3 { grid-template-columns: 1fr; } }
+  .panel { background: rgba(15,22,38,.85); border: 1px solid var(--line); border-radius: 10px; }
+  .panel > h2 { margin: 0; padding: 10px 14px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .panel > h2 .n { color: var(--accent); }
+  .panel .body { padding: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0 14px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .kpi .l { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .kpi .v { font-size: 26px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi .s { font-size: 12px; color: var(--dim); }
+  .kpi.hl { border-color: #f28c2866; background: linear-gradient(180deg, #f28c2814, transparent); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--line2); white-space: nowrap; background: var(--panel2); position: sticky; top: 0; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr.grp td { background: #f28c2812; color: var(--accent); font-weight: 700; letter-spacing: .08em; font-size: 12px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .p-ok { background: #34d39922; color: var(--ok); } .p-run { background: #60a5fa22; color: var(--run); }
+  .p-wait { background: #fbbf2422; color: var(--wait); } .p-bad { background: #f8717122; color: var(--bad); } .p-none { background: #64748b33; color: #cbd5e1; }
+  .prog { width: 90px; height: 6px; border-radius: 3px; background: var(--line2); overflow: hidden; display: inline-block; vertical-align: middle; }
+  .prog > i { display: block; height: 100%; background: var(--accent); }
+  .eq { color: var(--muted); font-size: 12px; } .eq b { color: var(--text); font-weight: 600; }
+  .thumbs { display: flex; gap: 4px; }
+  .thumbs img { width: 46px; height: 34px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line2); cursor: zoom-in; }
+  .eff input { width: 44px; text-align: center; background: #090e18; border: 1px solid var(--line2); border-radius: 4px; padding: 3px 2px; }
+  .eff input:focus { outline: none; border-color: var(--accent); }
+  .eff td, .eff th { text-align: center; padding: 4px 5px; }
+  .eff td:first-child, .eff th:first-child { text-align: left; }
+  .eff tr.tot td { font-weight: 700; border-top: 2px solid var(--line2); background: var(--panel2); }
+  .eff .h { color: var(--accent); font-weight: 700; }
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .ph { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line2); background: #000; cursor: zoom-in; }
+  .ph img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+  .ph .cap { position: absolute; inset: auto 0 0 0; padding: 14px 8px 7px; text-align: center; font: 12px/1.3 Arial, sans-serif; color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; background: linear-gradient(transparent, rgba(0,0,0,.55)); }
+  .ph .tag { position: absolute; top: 6px; left: 6px; font-size: 10px; font-weight: 700; background: var(--accent); color: #111; padding: 1px 6px; border-radius: 3px; }
+  .muted { color: var(--muted); } .small { font-size: 12px; }
+  .field { display: grid; gap: 4px; } .field label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  .field input, .field textarea, .field select { background: #090e18; border: 1px solid var(--line2); border-radius: 6px; padding: 7px 9px; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .meta div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .meta span { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .bars { display: flex; gap: 10px; align-items: flex-end; height: 170px; padding: 10px 4px 0; }
+  .bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bars .col { width: 100%; max-width: 60px; background: linear-gradient(180deg, var(--accent), #b45f12); border-radius: 5px 5px 0 0; min-height: 2px; }
+  .bars .col.zero { background: var(--line2); }
+  .bars small { color: var(--muted); font-size: 11px; } .bars b { font-size: 12px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .filters select, .filters input { background: #090e18; border: 1px solid var(--line2); border-radius: 6px; padding: 6px 9px; }
+  .btn { border: 1px solid var(--line2); background: var(--panel2); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  .btn.primary { background: var(--accent); color: #111; border-color: var(--accent); }
+  .note { border: 1px dashed #7c3aed88; background: #7c3aed12; color: #ddd6fe; border-radius: 8px; padding: 9px 12px; font-size: 12.5px; margin: 10px 0; }
+  .warn { border: 1px solid #f8717155; background: #f8717112; color: #fecaca; border-radius: 8px; padding: 9px 12px; font-size: 12.5px; }
+  .sheetlist { display: grid; gap: 8px; }
+  .sheet { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+  .sheet .ic { width: 34px; height: 34px; border-radius: 6px; background: #16a34a22; color: #4ade80; display: grid; place-items: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+  #lb { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: none; align-items: center; justify-content: center; z-index: 50; cursor: zoom-out; flex-direction: column; gap: 10px; }
+  #lb img { max-width: 94vw; max-height: 86vh; border-radius: 6px; }
+  #lb div { color: #fff; font: 15px Arial; }
+  .hide { display: none !important; }
+  .scroll { max-height: 560px; overflow: auto; }
+  .trend { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .trend .d { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0f1626" stroke="#2c3c5e"/><rect x="10" y="14" width="44" height="30" rx="3" fill="none" stroke="#8b9bb4" stroke-width="4"/><circle cx="32" cy="29" r="7" fill="none" stroke="#8b9bb4" stroke-width="4"/><rect x="10" y="46" width="44" height="8" rx="2" fill="#f28c28"/></svg>
+      <div><b>Industrial Photo Annotator</b> <span class="badge">V2 · maquette</span><small>Rapport journalier & suivi hebdomadaire — KHALID</small></div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-t="jour" class="on">Rapport du jour</button>
+      <button data-t="semaine">Vue semaine</button>
+      <button data-t="effectif">Effectif & heures</button>
+      <button data-t="export">Export Excel</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="days" id="days"></div>
+  <div class="note">Maquette cliquable construite avec <b>vos vraies données</b> des feuilles 23-11-2026 et 24-11-2026. Les cases d’effectif sont modifiables : les totaux, les heures et la vue semaine se recalculent immédiatement. Les boutons d’export sont des exemples (non actifs dans cette maquette).</div>
+
+  <!-- ============================ RAPPORT DU JOUR -->
+  <section id="v-jour">
+    <div class="meta" id="meta"></div>
+    <div class="kpis" id="kpiDay"></div>
+    <div class="grid g2">
+      <div class="panel"><h2>Synthèse de l’état des projets — aujourd’hui</h2><div class="body"><table id="synth"></table><p class="small muted" id="taux" style="margin:10px 0 0"></p></div></div>
+      <div class="panel"><h2>Effectif / main-d’œuvre <span class="n" id="effHead"></span></h2><div class="body scroll" style="max-height:420px"><table class="eff" id="effDay"></table></div></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><h2>Travaux journaliers — activités du jour <span class="small muted">statut calculé automatiquement</span></h2><div class="body scroll"><table id="acts"></table></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Éléments en attente <span class="n" id="waitN"></span></h2><div class="body scroll" style="max-height:340px"><table id="waits"></table></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Reportage photographique <span class="small muted">photos annotées (Modèle 2) reliées à chaque activité</span></h2><div class="body"><div id="photos"></div></div></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="panel"><h2>Suite des travaux & problèmes</h2><div class="body grid" style="gap:10px">
+        <div class="field"><label>Activités prévues — prochain jour ouvré (PAP)</label><textarea rows="2" placeholder="Ex. Soudage Anchor Chair M-55TF01, Cintrage Virole V6…"></textarea></div>
+        <div class="field"><label>Problèmes / action client requise</label><textarea rows="2" placeholder="Ex. Attente tôles 8 mm pour 55-TH02…"></textarea></div>
+      </div></div>
+      <div class="panel"><h2>HSE & qualité</h2><div class="body grid g2" style="gap:10px">
+        <div class="field"><label>Accidents avec arrêt</label><input type="number" value="0" min="0"></div>
+        <div class="field"><label>Presqu’accidents</label><input type="number" value="0" min="0"></div>
+        <div class="field"><label>Contrôles CQ</label><input type="number" value="0" min="0"></div>
+        <div class="field"><label>NC émises</label><input type="number" value="0" min="0"></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ============================ VUE SEMAINE -->
+  <section id="v-semaine" class="hide">
+    <div class="kpis" id="kpiWeek"></div>
+    <div class="grid g2">
+      <div class="panel"><h2>Avancement par jour</h2><div class="body"><div class="bars" id="actBars"></div></div></div>
+      <div class="panel"><h2>Synthèse par projet & équipement</h2><div class="body scroll" style="max-height:300px"><table id="byEquip"></table></div></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><h2>Toutes les activités <span class="n" id="weekN"></span></h2><div class="body">
+      <div class="filters">
+        <select id="fProj"><option value="">Tous les projets</option><option>SMP</option><option>PAP</option><option>PAT</option></select>
+        <select id="fStat"><option value="">Tous les statuts</option><option>TERMINÉ</option><option>EN COURS</option><option>EN ATTENTE</option><option>À RENSEIGNER</option></select>
+        <select id="fType"><option value="ACTIVITE">Activités du jour</option><option value="ATTENTE">Éléments en attente</option><option value="">Tout</option></select>
+        <input id="fQ" placeholder="Rechercher (équipement, activité, tag…)" style="min-width:260px">
+      </div>
+      <div class="scroll"><table id="weekTbl"></table></div>
+    </div></div>
+  </section>
+
+  <!-- ============================ EFFECTIF & HEURES -->
+  <section id="v-effectif" class="hide">
+    <div class="kpis" id="kpiEff"></div>
+    <div class="grid g2">
+      <div class="panel"><h2>Heures par jour</h2><div class="body"><div class="bars" id="hBars"></div></div></div>
+      <div class="panel"><h2>Heures par projet</h2><div class="body"><table id="hProj"></table></div></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><h2>Effectif par métier et par jour (tous projets)</h2><div class="body scroll"><table class="eff" id="effWeek"></table></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Réglage des heures par demi-journée</h2><div class="body">
+      <table class="eff" id="hCfg" style="max-width:640px"></table>
+      <p class="warn" style="margin-top:12px"><b>À confirmer :</b> votre fichier compte <b>4 h le matin + 5 h l’après-midi</b> (feuille RECAP_EFFECTIF), alors que les horaires affichés sont 08:00–12:00 / 13:00–17:00 (= 4 h + 4 h), et 08:00–13:00 pour MHS. Cette maquette utilise les horaires affichés ; dans l’application, ce réglage sera modifiable par projet.</p>
+    </div></div>
+  </section>
+
+  <!-- ============================ EXPORT -->
+  <section id="v-export" class="hide">
+    <div class="grid g2" style="margin-top:6px">
+      <div class="panel"><h2>Exporter</h2><div class="body grid" style="gap:12px">
+        <button class="btn primary" id="xDay"></button>
+        <button class="btn" id="xWeek">Exporter la semaine 48 (.xlsx) — tous les jours + récapitulatifs</button>
+        <button class="btn">Exporter le rapport en PDF (impression)</button>
+        <p class="small muted" style="margin:0">Le fichier Excel reprend la mise en page de votre modèle : en-tête, synthèse, effectif, activités, éléments en attente, reportage photo (images dans les cellules), validation. Les formules sont remplacées par des valeurs calculées par l’application : plus de <code>#REF!</code> ni de <code>#N/A</code>.</p>
+      </div></div>
+      <div class="panel"><h2>Contenu du fichier « Daily Report Semaine 48.xlsx »</h2><div class="body sheetlist" id="sheets"></div></div>
+    </div>
+  </section>
+</div>
+
+<div id="lb" onclick="this.style.display='none'"><img alt=""><div></div></div>
+
+<script src="data.js"></script>
+<script>
+// ------------------------------------------------------------------ Data model (what V2 will store)
+const DATA = window.REPORT_DATA || [];
+const PROJECTS = ['SMP', 'PAT', 'PAP', 'MHS', 'MS'];
+const REPORT_PROJECTS = ['SMP', 'PAP', 'PAT'];
+const HOURS = { SMP: [4, 4], PAT: [4, 4], PAP: [4, 4], MHS: [5, 4], MS: [4, 4] };
+const DAYS = [];
+const monday = new Date(2026, 10, 23);
+for (let i = 0; i < 7; i++) { const d = new Date(monday); d.setDate(d.getDate() + i); DAYS.push(d); }
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const fr = (d) => d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit' }).replace('.', '');
+const frLong = (d) => d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 86400000 + 1) / 7); }
+const WEEK = isoWeek(monday);
+
+const byDate = {};
+for (const day of DATA) byDate[day.date] = day;
+
+// Status computed by the app (replaces the #REF! formulas)
+function statusOf(a) {
+  if (a.type === 'ATTENTE') return /suivant/i.test(a.obs) || /SUIVANTE/.test(a.statut) ? 'ATTENTE PHASE SUIVANTE' : 'EN ATTENTE';
+  const v = String(a.avancement).trim();
+  if (/bloq/i.test(v + a.obs)) return 'BLOQUÉ';
+  if (v === '1' || /termin/i.test(v)) return 'TERMINÉ';
+  if (v === '' || v === '0') return a.statut && !/REF|^$/.test(a.statut) ? a.statut : 'À RENSEIGNER';
+  return 'EN COURS';
+}
+const pct = (a) => { const n = parseFloat(a.avancement); return Number.isFinite(n) ? Math.round(n * 100) : null; };
+for (const day of DATA) for (const a of day.activites) { a.status = statusOf(a); a.date = day.date; a.photos = day.photos.filter((p) => p.caption && p.caption === a.activite && p.file); }
+
+const pill = (s) => `<span class="pill ${/TERMIN/.test(s) ? 'p-ok' : /COURS/.test(s) ? 'p-run' : /ATTENTE/.test(s) ? 'p-wait' : /BLOQ/.test(s) ? 'p-bad' : 'p-none'}">${s}</span>`;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const eqHtml = (e) => { const [no, name, tag] = e.split('|').map((x) => x.trim()); return e ? `<div class="eq"><b>${esc(no)}</b> · ${esc(name)} · ${esc(tag)}</div>` : ''; };
+
+// ------------------------------------------------------------------ Effectif & hours
+const persons = (day, p, half) => day.effectif.reduce((s, e) => s + (e[p]?.[half] || 0), 0);
+const hoursOf = (day, p) => persons(day, p, 0) * HOURS[p][0] + persons(day, p, 1) * HOURS[p][1];
+const dayHours = (day) => PROJECTS.reduce((s, p) => s + hoursOf(day, p), 0);
+const dayPeople = (day) => PROJECTS.reduce((s, p) => s + Math.max(persons(day, p, 0), persons(day, p, 1)), 0);
+
+// ------------------------------------------------------------------ State
+let sel = '2026-11-24';
+let tab = 'jour';
+const $ = (id) => document.getElementById(id);
+
+function renderDays() {
+  const items = [`<span class="wk">Semaine ${WEEK} <span>· S7 projet · 23 → 29 nov. 2026</span></span>`];
+  if (tab !== 'jour') items.push(`<button class="chip ${sel === 'WEEK' ? 'on' : ''}" data-d="WEEK">Toute la semaine</button>`);
+  for (const d of DAYS) {
+    const k = iso(d), has = !!byDate[k];
+    items.push(`<button class="chip ${sel === k ? 'on' : ''} ${has ? '' : 'off'}" data-d="${k}" ${has ? '' : 'title="Pas de rapport saisi"'}><span class="dot" style="background:${has ? 'var(--ok)' : 'var(--line2)'}"></span>${fr(d)}</button>`);
+  }
+  $('days').innerHTML = items.join('');
+}
+$('days').onclick = (e) => { const b = e.target.closest('[data-d]'); if (!b || b.classList.contains('off')) return; sel = b.dataset.d; render(); };
+$('tabs').onclick = (e) => { const b = e.target.closest('[data-t]'); if (!b) return; tab = b.dataset.t; if (tab === 'jour' && sel === 'WEEK') sel = '2026-11-24'; if (tab !== 'jour' && tab !== 'export') sel = 'WEEK'; render(); };
+
+function kpi(l, v, s = '', hl = false) { return `<div class="kpi ${hl ? 'hl' : ''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`; }
+function openPhoto(src, cap) { const lb = $('lb'); lb.querySelector('img').src = src; lb.querySelector('div').textContent = cap; lb.style.display = 'flex'; }
+document.addEventListener('click', (e) => { const im = e.target.closest('[data-photo]'); if (im) openPhoto(im.dataset.photo, im.dataset.cap || ''); });
+
+// ------------------------------------------------------------------ Rapport du jour
+function renderDay() {
+  const day = byDate[sel]; if (!day) return;
+  const acts = day.activites.filter((a) => a.type === 'ACTIVITE');
+  const waits = day.activites.filter((a) => a.type === 'ATTENTE');
+  const done = acts.filter((a) => a.status === 'TERMINÉ').length;
+  const run = acts.filter((a) => a.status === 'EN COURS').length;
+  $('meta').innerHTML = [['Date du rapport', frLong(new Date(sel))], ['N° d’affaire', day.affaire], ['Projets', day.projets], ['Atelier', day.atelier], ['Établi par', day.etabliPar], ['Révision', day.revision || '00']]
+    .map(([k, v]) => `<div><span>${k}</span>${esc(v)}</div>`).join('');
+  const matin = PROJECTS.reduce((s, p) => s + persons(day, p, 0), 0), am = PROJECTS.reduce((s, p) => s + persons(day, p, 1), 0);
+  $('kpiDay').innerHTML = kpi('Effectif', `${matin} / ${am}`, 'matin / après-midi (tous projets)') + kpi('Heures du jour', dayHours(day) + ' h', 'calcul automatique', true) +
+    kpi('Activités', acts.length, `${done} terminées · ${run} en cours`) + kpi('Taux de réalisation', acts.length ? Math.round((done / acts.length) * 100) + ' %' : '–', 'terminées / activités') +
+    kpi('Éléments en attente', waits.length, 'tous projets') + kpi('Photos', day.photos.filter((p) => p.file).length, 'reportage du jour');
+  // synthesis
+  let rows = '<tr><th>Projet</th><th class="num">Effectif M / AM</th><th class="num">Activités</th><th class="num">Terminées</th><th class="num">En cours</th><th class="num">En attente</th></tr>';
+  const tot = [0, 0, 0, 0, 0, 0];
+  for (const p of REPORT_PROJECTS) {
+    const a = acts.filter((x) => x.projet === p), w = waits.filter((x) => x.projet === p);
+    const v = [persons(day, p, 0), persons(day, p, 1), a.length, a.filter((x) => x.status === 'TERMINÉ').length, a.filter((x) => x.status === 'EN COURS').length, w.length];
+    v.forEach((n, i) => (tot[i] += n));
+    rows += `<tr><td><b>${p}</b></td><td class="num">${v[0]} / ${v[1]}</td><td class="num">${v[2]}</td><td class="num">${v[3]}</td><td class="num">${v[4]}</td><td class="num">${v[5]}</td></tr>`;
+  }
+  rows += `<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>${tot[0]} / ${tot[1]}</b></td><td class="num"><b>${tot[2]}</b></td><td class="num"><b>${tot[3]}</b></td><td class="num"><b>${tot[4]}</b></td><td class="num"><b>${tot[5]}</b></td></tr>`;
+  $('synth').innerHTML = rows;
+  $('taux').innerHTML = `Taux de réalisation du jour : <b>${tot[2] ? Math.round((tot[3] / tot[2]) * 100) : 0} %</b> · Éléments bloqués : <b>${acts.filter((a) => a.status === 'BLOQUÉ').length}</b>`;
+  // effectif grid (editable)
+  let h = '<tr><th>Métier</th>' + PROJECTS.map((p) => `<th colspan="2">${p}<div class="small muted">${HOURS[p][0]}h · ${HOURS[p][1]}h</div></th>`).join('') + '<th>Heures</th></tr>';
+  h += '<tr><th></th>' + PROJECTS.map(() => '<th class="small">M</th><th class="small">AM</th>').join('') + '<th></th></tr>';
+  day.effectif.forEach((e, i) => {
+    const hrs = PROJECTS.reduce((s, p) => s + e[p][0] * HOURS[p][0] + e[p][1] * HOURS[p][1], 0);
+    h += `<tr><td>${esc(e.metier)}</td>` + PROJECTS.map((p) => [0, 1].map((k) => `<td><input type="number" min="0" value="${e[p][k] || ''}" data-i="${i}" data-p="${p}" data-k="${k}"></td>`).join('')).join('') + `<td class="h">${hrs || ''}</td></tr>`;
+  });
+  h += '<tr class="tot"><td>TOTAL</td>' + PROJECTS.map((p) => `<td>${persons(day, p, 0)}</td><td>${persons(day, p, 1)}</td>`).join('') + `<td class="h">${dayHours(day)} h</td></tr>`;
+  $('effDay').innerHTML = h;
+  $('effHead').textContent = `${dayHours(day)} h`;
+  // activities
+  let t = '<tr><th>Équipement / activité</th><th class="num">NBR</th><th>Main-d’œuvre</th><th class="num">Qté</th><th>Avancement</th><th>Statut</th><th>Phase / observations</th><th>Photos</th></tr>';
+  for (const p of REPORT_PROJECTS) {
+    const a = acts.filter((x) => x.projet === p);
+    t += `<tr class="grp"><td colspan="8">${p} — ${a.length} activité(s)</td></tr>`;
+    for (const x of a) {
+      const pc = pct(x);
+      t += `<tr><td>${eqHtml(x.equipement)}<div>${esc(x.activite)}</div></td><td class="num">${esc(x.nbr)}</td><td class="small">${esc(x.mo)}</td><td class="num">${esc(x.qte)} <span class="muted small">${esc(x.unite)}</span></td>
+        <td>${pc !== null ? `<span class="prog"><i style="width:${pc}%"></i></span> <span class="small">${pc}%</span>` : `<span class="small muted">${esc(x.avancement) || '—'}</span>`}</td><td>${pill(x.status)}</td><td class="small">${esc(x.obs)}</td>
+        <td><div class="thumbs">${x.photos.map((ph) => `<img src="${ph.file}" data-photo="${ph.file}" data-cap="${esc(x.activite)}" alt="">`).join('') || '<span class="small muted">—</span>'}</div></td></tr>`;
+    }
+  }
+  $('acts').innerHTML = t;
+  // waiting
+  $('waitN').textContent = waits.length;
+  $('waits').innerHTML = '<tr><th>Projet</th><th>Équipement / élément</th><th>Depuis</th><th>Qté</th><th>Situation</th><th>Statut</th></tr>' +
+    waits.map((x) => `<tr><td><b>${x.projet}</b></td><td>${eqHtml(x.equipement)}<div>${esc(x.activite)}</div></td><td>${esc(x.unite)}</td><td>${esc(x.qte)}</td><td class="small">${esc(x.obs)}</td><td>${pill(x.status)}</td></tr>`).join('');
+  // photos
+  let ph = '';
+  for (const p of REPORT_PROJECTS) {
+    const list = day.photos.filter((x) => x.file && day.activites.some((a) => a.projet === p && a.activite === x.caption));
+    if (!list.length) continue;
+    ph += `<h3 style="margin:6px 0 10px;font-size:12px;letter-spacing:.12em;color:var(--accent)">${p}</h3><div class="photos" style="margin-bottom:16px">` +
+      list.map((x) => { const a = day.activites.find((y) => y.activite === x.caption); const [, , tag] = (a?.equipement || '').split('|').map((s) => s.trim());
+        return `<div class="ph" data-photo="${x.file}" data-cap="${esc(x.caption)}"><img src="${x.file}" loading="lazy" alt=""><span class="tag">${a?.type === 'ATTENTE' ? 'EN ATTENTE' : p}</span><div class="cap">Projet: ${p}-${esc(tag || '')}<br>Tache: ${esc(x.caption)}</div></div>`; }).join('') + '</div>';
+  }
+  $('photos').innerHTML = ph || '<p class="muted">Aucune photo.</p>';
+}
+$('effDay').addEventListener('change', (e) => {
+  const i = e.target.dataset.i; if (i === undefined) return;
+  byDate[sel].effectif[+i][e.target.dataset.p][+e.target.dataset.k] = Math.max(0, +e.target.value || 0);
+  render();
+});
+
+// ------------------------------------------------------------------ Week view
+function scope() { return sel === 'WEEK' ? DATA : DATA.filter((d) => d.date === sel); }
+function renderWeek() {
+  const days = scope();
+  const acts = days.flatMap((d) => d.activites.filter((a) => a.type === 'ACTIVITE'));
+  const waits = days.flatMap((d) => d.activites.filter((a) => a.type === 'ATTENTE'));
+  const uniq = new Set(acts.map((a) => a.equipement + '|' + a.activite));
+  const done = acts.filter((a) => a.status === 'TERMINÉ').length;
+  $('kpiWeek').innerHTML = kpi(sel === 'WEEK' ? `Activités semaine ${WEEK}` : 'Activités du jour', acts.length, `${uniq.size} activités différentes`, true) + kpi('Terminées', done, acts.length ? Math.round((done / acts.length) * 100) + ' % de réalisation' : '') +
+    kpi('En cours', acts.filter((a) => a.status === 'EN COURS').length, 'suivies jour après jour') + kpi('Éléments en attente', new Set(waits.map((a) => a.equipement + a.activite)).size, 'distincts') +
+    kpi('Équipements touchés', new Set(acts.map((a) => a.equipement).filter(Boolean)).size, 'bacs / appareils') + kpi('Jours saisis', `${days.length} / 6`, 'lun → sam');
+  // bars: activities per day
+  const max = Math.max(1, ...DAYS.slice(0, 6).map((d) => byDate[iso(d)]?.activites.filter((a) => a.type === 'ACTIVITE').length || 0));
+  $('actBars').innerHTML = DAYS.slice(0, 6).map((d) => { const day = byDate[iso(d)]; const a = day ? day.activites.filter((x) => x.type === 'ACTIVITE') : []; const dn = a.filter((x) => x.status === 'TERMINÉ').length;
+    return `<div class="b"><b>${a.length || ''}</b><div class="col ${a.length ? '' : 'zero'}" style="height:${(a.length / max) * 120}px" title="${dn} terminées"></div><small>${fr(d)}</small></div>`; }).join('');
+  // by equipment
+  const map = new Map();
+  for (const a of acts) { const k = a.projet + '|' + a.equipement; const m = map.get(k) || { p: a.projet, e: a.equipement, n: 0, ok: 0, run: 0, days: new Set() }; m.n++; if (a.status === 'TERMINÉ') m.ok++; if (a.status === 'EN COURS') m.run++; m.days.add(a.date); map.set(k, m); }
+  $('byEquip').innerHTML = '<tr><th>Projet</th><th>Équipement</th><th class="num">Act.</th><th class="num">Term.</th><th class="num">En cours</th><th class="num">Jours</th></tr>' +
+    [...map.values()].sort((a, b) => a.p.localeCompare(b.p) || b.n - a.n).map((m) => `<tr><td><b>${m.p}</b></td><td>${eqHtml(m.e)}</td><td class="num">${m.n}</td><td class="num">${m.ok}</td><td class="num">${m.run}</td><td class="num">${m.days.size}</td></tr>`).join('');
+  renderWeekTable();
+}
+function renderWeekTable() {
+  const fp = $('fProj').value, fs = $('fStat').value, ft = $('fType').value, q = $('fQ').value.toLowerCase();
+  const all = scope().flatMap((d) => d.activites);
+  const list = all.filter((a) => (!fp || a.projet === fp) && (!ft || a.type === ft) && (!fs || a.status.startsWith(fs)) && (!q || (a.equipement + ' ' + a.activite + ' ' + a.obs).toLowerCase().includes(q)));
+  $('weekN').textContent = list.length;
+  // history of the same activity across the week (progress trend)
+  const hist = (a) => DATA.map((d) => d.activites.find((x) => x.activite === a.activite && x.equipement === a.equipement)).map((x, i) => x ? `<span class="d">${fr(new Date(DATA[i].date))}</span>${pill(x.status)}` : '').filter(Boolean).join(' ');
+  $('weekTbl').innerHTML = '<tr><th>Date</th><th>Projet</th><th>Équipement / activité</th><th>Main-d’œuvre</th><th class="num">Qté</th><th>Avancement</th><th>Statut</th><th>Suivi sur la semaine</th></tr>' +
+    list.map((a) => { const pc = pct(a); return `<tr><td class="small">${fr(new Date(a.date))}</td><td><b>${a.projet}</b></td><td>${eqHtml(a.equipement)}<div>${esc(a.activite)}</div></td><td class="small">${esc(a.mo)}</td><td class="num">${esc(a.qte)} <span class="muted small">${esc(a.type === 'ATTENTE' ? '' : a.unite)}</span></td>
+      <td>${pc !== null ? `<span class="prog"><i style="width:${pc}%"></i></span> <span class="small">${pc}%</span>` : `<span class="small muted">${esc(a.type === 'ATTENTE' ? a.unite : a.avancement) || '—'}</span>`}</td><td>${pill(a.status)}</td><td><div class="trend">${hist(a)}</div></td></tr>`; }).join('');
+}
+['fProj', 'fStat', 'fType'].forEach((id) => ($(id).onchange = renderWeekTable));
+$('fQ').oninput = renderWeekTable;
+
+// ------------------------------------------------------------------ Effectif & hours (week)
+function renderEff() {
+  const days = scope();
+  const hours = days.reduce((s, d) => s + dayHours(d), 0), hj = days.reduce((s, d) => s + dayPeople(d), 0);
+  $('kpiEff').innerHTML = kpi(sel === 'WEEK' ? `Total heures semaine ${WEEK}` : 'Heures du jour', hours + ' h', 'tous projets, calcul automatique', true) + kpi('Hommes-jours', hj, `${days.length} jour(s) saisi(s)`) +
+    kpi('Effectif moyen / jour', days.length ? Math.round(hj / days.length) : '–', 'personnes') + kpi('Effectif max / jour', Math.max(0, ...days.map(dayPeople)), 'personnes') +
+    kpi('Heures cumulées MHS', byDate['2026-11-24']?.cumul.MHS || '–', 'depuis le début (report du fichier)') + kpi('Heures cumulées MS', byDate['2026-11-24']?.cumul.MS || '–', 'depuis le début');
+  const max = Math.max(1, ...DAYS.slice(0, 6).map((d) => (byDate[iso(d)] ? dayHours(byDate[iso(d)]) : 0)));
+  $('hBars').innerHTML = DAYS.slice(0, 6).map((d) => { const day = byDate[iso(d)]; const v = day ? dayHours(day) : 0;
+    return `<div class="b"><b>${v ? v + ' h' : ''}</b><div class="col ${v ? '' : 'zero'}" style="height:${(v / max) * 120}px"></div><small>${fr(d)}</small></div>`; }).join('');
+  $('hProj').innerHTML = '<tr><th>Projet</th><th class="num">Hommes-jours</th><th class="num">Heures</th><th class="num">Part</th></tr>' +
+    PROJECTS.map((p) => { const hp = days.reduce((s, d) => s + hoursOf(d, p), 0), pj = days.reduce((s, d) => s + Math.max(persons(d, p, 0), persons(d, p, 1)), 0);
+      return `<tr><td><b>${p}</b></td><td class="num">${pj}</td><td class="num">${hp} h</td><td><span class="prog" style="width:120px"><i style="width:${hours ? (hp / hours) * 100 : 0}%"></i></span> <span class="small">${hours ? Math.round((hp / hours) * 100) : 0}%</span></td></tr>`; }).join('') +
+    `<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>${hj}</b></td><td class="num"><b>${hours} h</b></td><td></td></tr>`;
+  // métier × day
+  const metiers = [...new Set(DATA.flatMap((d) => d.effectif.map((e) => e.metier)))];
+  const wd = DAYS.slice(0, 6);
+  let h = '<tr><th>Métier</th>' + wd.map((d) => `<th>${fr(d)}</th>`).join('') + '<th>Hommes-jours</th><th>Heures</th></tr>';
+  let tHJ = 0, tH = 0;
+  for (const m of metiers) {
+    let hjm = 0, hm = 0;
+    const cells = wd.map((d) => { const day = byDate[iso(d)]; if (!day) return '<td class="muted">·</td>'; const e = day.effectif.find((x) => x.metier === m); if (!e) return '<td>0</td>';
+      const n = PROJECTS.reduce((s, p) => s + Math.max(e[p][0], e[p][1]), 0); hjm += n; hm += PROJECTS.reduce((s, p) => s + e[p][0] * HOURS[p][0] + e[p][1] * HOURS[p][1], 0); return `<td>${n || ''}</td>`; }).join('');
+    tHJ += hjm; tH += hm;
+    if (hjm) h += `<tr><td>${esc(m)}</td>${cells}<td><b>${hjm}</b></td><td class="h">${hm} h</td></tr>`;
+  }
+  h += '<tr class="tot"><td>TOTAL</td>' + wd.map((d) => `<td>${byDate[iso(d)] ? dayPeople(byDate[iso(d)]) : '·'}</td>`).join('') + `<td>${tHJ}</td><td class="h">${tH} h</td></tr>`;
+  $('effWeek').innerHTML = h;
+  $('hCfg').innerHTML = '<tr><th>Projet</th><th>Matin (h)</th><th>Après-midi (h)</th><th>Journée</th></tr>' + PROJECTS.map((p) => `<tr><td><b>${p}</b></td><td><input type="number" min="0" max="12" value="${HOURS[p][0]}" data-hp="${p}" data-hk="0"></td><td><input type="number" min="0" max="12" value="${HOURS[p][1]}" data-hp="${p}" data-hk="1"></td><td class="h">${HOURS[p][0] + HOURS[p][1]} h</td></tr>`).join('');
+}
+$('hCfg').addEventListener('change', (e) => { const p = e.target.dataset.hp; if (!p) return; HOURS[p][+e.target.dataset.hk] = Math.max(0, +e.target.value || 0); render(); });
+
+// ------------------------------------------------------------------ Export preview
+function renderExport() {
+  const d = sel === 'WEEK' ? '2026-11-24' : sel;
+  $('xDay').textContent = `Exporter le rapport du ${d.split('-').reverse().join('/')} (.xlsx)`;
+  const sheets = [
+    ...DATA.map((x) => [x.sheet, `Rapport journalier complet · ${x.activites.filter((a) => a.type === 'ACTIVITE').length} activités · ${x.photos.filter((p) => p.file).length} photos dans les cellules`]),
+    ['RECAP_SEMAINE', `Toutes les activités de la semaine ${WEEK} par projet et équipement, avec statut et taux de réalisation`],
+    ['RECAP_EFFECTIF', `Effectif par métier × jour, hommes-jours et total des heures (${DATA.reduce((s, x) => s + dayHours(x), 0)} h)`],
+    ['HISTORIQUE', 'Une ligne par activité et par jour depuis le début du projet (base de l’historique)'],
+  ];
+  $('sheets').innerHTML = sheets.map(([n, t]) => `<div class="sheet"><div class="ic">XLS</div><div><b>${n}</b><div class="small muted">${t}</div></div></div>`).join('');
+}
+
+// ------------------------------------------------------------------ Render
+function render() {
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === tab));
+  ['jour', 'semaine', 'effectif', 'export'].forEach((t) => $('v-' + t).classList.toggle('hide', t !== tab));
+  renderDays();
+  if (tab === 'jour') renderDay();
+  if (tab === 'semaine') renderWeek();
+  if (tab === 'effectif') renderEff();
+  if (tab === 'export') renderExport();
+}
+render();
+</script>
+</body>
+</html>

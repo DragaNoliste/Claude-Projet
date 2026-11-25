@@ -3,3 +3,8 @@ dist
 *.log
 Sauvegardes/
 .claude/settings.local.json
+
+# Prototype V2 : données et photos réelles du client (ne pas publier)
+prototype-v2/photos/
+prototype-v2/data.js
+prototype-v2/test-data/
