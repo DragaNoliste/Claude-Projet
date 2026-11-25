@@ -4,6 +4,7 @@ import type { ProjectRecord } from '../types';
 import { db } from '../lib/db';
 import { formatDate } from '../lib/utils';
 import { thumbUrlFor } from '../lib/images';
+import { ownerOf } from '../hooks/useProject';
 import { Button, Icon, inputCls, Kbd, Modal, toast } from './ui';
 
 // ------------------------------------------------------------------ Task library
@@ -134,12 +135,16 @@ export function HistoryModal({
   open,
   onClose,
   currentId,
+  ownerId,
+  ownerName,
   onOpen,
   onNew,
 }: {
   open: boolean;
   onClose: () => void;
   currentId: string;
+  ownerId: string;
+  ownerName: string;
   onOpen: (id: string) => void;
   onNew: () => void;
 }) {
@@ -150,10 +155,10 @@ export function HistoryModal({
     if (open) void refresh();
   }, [open]);
 
-  const list = (projects ?? []).filter((p) => `${p.name} ${p.site} ${p.date}`.toLowerCase().includes(q.toLowerCase()));
+  const list = (projects ?? []).filter((p) => ownerOf(p) === ownerId).filter((p) => `${p.name} ${p.site} ${p.date}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <Modal open={open} onClose={onClose} title="Historique des projets" wide>
+    <Modal open={open} onClose={onClose} title={`Historique des projets — ${ownerName}`} wide>
       <div className="space-y-4">
         <div className="flex gap-2">
           <input className={inputCls} placeholder="Rechercher un projet…" value={q} onChange={(e) => setQ(e.target.value)} />

@@ -50,13 +50,30 @@ Le dossier `dist/` contient une version statique qui peut être hébergée sur n
 
 ---
 
+## Utilisateurs et listes d'équipements
+
+Au démarrage, choisissez votre nom (**KHALID**, **NAJIB**…). Chaque utilisateur a **sa propre liste d'équipements**, son propre format de texte et **son propre historique de projets**. Pour changer : cliquez sur votre nom en haut à droite.
+
+| Utilisateur | Liste | Exemple de texte sur la photo |
+|---|---|---|
+| KHALID | PAP · SMP · PAT | `Projet: PAP-M76AAR15` / `Designation: Sump Tank` |
+| NAJIB | CHEMITECS · MS HOPPERS · CALGON CARBON | `Projet: CHEMITECS-5553` / `Designation: Inter Acid Tower Train B - LEVEL 1` |
+
+### Importer une nouvelle liste (bouton **Données**)
+
+1. Préparez le tableau comme d'habitude : une ligne avec le **nom du groupe** (ex. `CHEMITECS`), puis les colonnes **No. · Tank Name · Client Tag** (les autres colonnes sont ignorées). Plusieurs groupes peuvent se suivre.
+2. Cliquez **Données** → **Fichier Excel / CSV** (`.xlsx`, `.csv`, `.txt`), **ou** sélectionnez les cellules dans Excel, `Ctrl+C`, puis collez-les dans la zone de texte et cliquez **Analyser**.
+3. Vérifiez l'aperçu, choisissez **Ajouter à la liste actuelle** (les doublons sont ignorés) ou **Remplacer toute la liste**, puis **Importer**.
+
+Dans la même fenêtre : supprimer un groupe, exporter la liste en CSV (sauvegarde, réimportable), et régler le texte écrit sur la photo avec les mots-clés `{groupe}`, `{no}`, `{nom}`, `{tag}` (ex. `{groupe}-{tag}` → `PAP-M76AAR15`).
+
 ## Utilisation — flux de travail rapide
 
 **Importer 20 photos → Nom du projet → Repères et tâches → Aperçu → Tout exporter.**
 
 1. **Projet** (onglet *1 · Projet*) : nom du projet, date, site/zone optionnel. Appliqués automatiquement à toutes les photos.
    - Le projet se choisit dans une **liste déroulante** des équipements (groupes PAP, SMP, PAT). Choisir `5555-TB01 | SUMP TANK | M76AAR15` remplit **Projet** = `PAP-M76AAR15` et **Désignation** = `Sump Tank`. Tapez quelques lettres (tag, n° ou nom, ex. `seal tn`) pour filtrer, ↑/↓ + Entrée pour choisir. Un texte libre reste possible.
-   - Pour modifier la liste : fichier `src/lib/projectList.ts`.
+   - Pour modifier la liste : bouton **Données** (import Excel / CSV / copier-coller).
 2. **Photos** : glissez-déposez vos photos n'importe où dans la fenêtre, ou cliquez sur *Choisir des photos*. Elles sont triées par nom de fichier. Utilisez les flèches de déplacement pour changer l'ordre.
 3. **Détails** (colonne de droite) : pour chaque photo, saisissez le **Repère**, la **Tâche réalisée** (ou cliquez une tâche de la bibliothèque) et des observations optionnelles. `Ctrl+Entrée` passe à la photo suivante avec le curseur dans *Repère*.
 4. **Aperçu en direct** : chaque modification met l'aperçu à jour instantanément. Cliquez dessus pour le plein écran.

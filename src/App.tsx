@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useProject } from './hooks/useProject';
+import { EquipmentContext, useUsers } from './hooks/useUsers';
+import { DataModal, UserChooser, UserMenu } from './components/UsersUI';
 import { useTaskLibrary } from './hooks/useTaskLibrary';
 import { ProjectPanel } from './components/ProjectPanel';
 import { StylePanel } from './components/StylePanel';
@@ -15,11 +17,12 @@ import { isEditableTarget } from './lib/utils';
 type LeftTab = 'project' | 'style' | 'export';
 
 export default function App() {
-  const store = useProject();
+  const users = useUsers();
+  const store = useProject(users.currentId);
   const library = useTaskLibrary();
   const { project } = store;
   const [tab, setTab] = useState<LeftTab>('project');
-  const [modal, setModal] = useState<'history' | 'library' | 'shortcuts' | null>(null);
+  const [modal, setModal] = useState<'history' | 'library' | 'shortcuts' | 'data' | null>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [clipboard, setClipboard] = useState<Clipboard>(null);
@@ -180,7 +183,8 @@ export default function App() {
     };
   }, [store]);
 
-  if (!project) {
+  if (users.ready && !users.current) return <UserChooser users={users} />;
+  if (!project || !users.current) {
     return <div className="flex h-screen items-center justify-center text-sm text-slate-400">Chargement…</div>;
   }
 
@@ -195,6 +199,7 @@ export default function App() {
   ];
 
   return (
+    <EquipmentContext.Provider value={users.options}>
     <div className="flex min-h-screen flex-col">
       {/* ================================================================ Header */}
       <header className="sticky top-0 z-30 border-b border-navy-700 bg-navy-950/90 backdrop-blur">
@@ -249,11 +254,15 @@ export default function App() {
             <Button variant="ghost" icon="list" onClick={() => setModal('library')} title="Bibliothèque de tâches" className="max-sm:px-2">
               <span className="hidden lg:inline">Tâches</span>
             </Button>
+            <Button variant="ghost" icon="folder" onClick={() => setModal('data')} title="Données : importer la liste des équipements" className="max-sm:px-2">
+              <span className="hidden lg:inline">Données</span>
+            </Button>
             <Button variant="ghost" icon="keyboard" onClick={() => setModal('shortcuts')} title="Raccourcis clavier (?)" className="max-sm:hidden" />
             <Button variant="primary" icon="zip" disabled={!photos.length || !!progress} onClick={() => void runExport('all', 'zip')} className="ml-1">
               <span className="hidden sm:inline">Exporter tout</span>
               <span className="sm:hidden">ZIP</span>
             </Button>
+            <div className="ml-1.5"><UserMenu users={users} onOpenData={() => setModal('data')} /></div>
           </div>
         </div>
       </header>
@@ -373,6 +382,8 @@ export default function App() {
         open={modal === 'history'}
         onClose={() => setModal(null)}
         currentId={project.id}
+        ownerId={users.current.id}
+        ownerName={users.current.name}
         onOpen={async (id) => {
           setModal(null);
           if (await store.loadProject(id)) toast('Projet ouvert.', 'success');
@@ -384,7 +395,9 @@ export default function App() {
       />
       <TaskLibraryModal open={modal === 'library'} onClose={() => setModal(null)} library={library} />
       <ShortcutsModal open={modal === 'shortcuts'} onClose={() => setModal(null)} />
+      <DataModal open={modal === 'data'} onClose={() => setModal(null)} users={users} />
       <Toaster />
     </div>
+    </EquipmentContext.Provider>
   );
 }

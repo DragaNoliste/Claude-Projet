@@ -131,6 +131,7 @@ export function DetailsPanel({
               id="photo-project"
               placeholder={`Projet : ${p.name || '—'}`}
               value={photo.projectOverride}
+              designation={photo.designationOverride}
               onChange={(v) => up({ projectOverride: v })}
               onPick={(o) => up({ projectOverride: o.code, designationOverride: o.designation })}
             />

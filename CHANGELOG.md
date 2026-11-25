@@ -1,5 +1,18 @@
 # Historique des versions
 
+## 1.2.0 — 25/11/2026
+
+- **Utilisateurs KHALID et NAJIB** : écran « Qui utilise l'application ? » au démarrage, changement d'utilisateur depuis l'en-tête.
+  Chaque utilisateur a sa propre liste d'équipements, son format de texte et son historique de projets.
+  - KHALID : liste PAP / SMP / PAT inchangée (Projet `PAP-M76AAR15`, Designation `Sump Tank`).
+  - NAJIB : nouvelle liste CHEMITECS / MS HOPPERS / CALGON CARBON (Projet `CHEMITECS-5553`, Designation `Inter Acid Tower Train B - LEVEL 1`).
+  - Ajout d'autres utilisateurs possible.
+- **Import de liste** (bouton « Données ») : fichier Excel `.xlsx`, CSV / TXT, ou copier-coller depuis Excel, avec aperçu
+  avant import, mode « Ajouter » (doublons ignorés) ou « Remplacer ». Export de la liste en CSV.
+- **Format du texte réglable** par utilisateur : mots-clés `{groupe}`, `{no}`, `{nom}`, `{tag}`.
+- Recherche : les nombres correspondent au début des mots (« level 3 » ne trouve plus « 5553 »).
+- Les projets existants sont rattachés à KHALID.
+
 ## 1.1.0 — 24/11/2026
 
 - **Liste déroulante des équipements** (PAP, SMP, PAT) pour le champ Projet, avec recherche (tag, n° ou nom du bac).

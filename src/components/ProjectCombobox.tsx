@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PROJECT_GROUPS, type ProjectOption } from '../lib/projectList';
+import type { ProjectOption } from '../lib/projectList';
+import { useEquipmentOptions } from '../hooks/useUsers';
 import { Icon, inputCls } from './ui';
 
 /**
@@ -9,16 +10,21 @@ import { Icon, inputCls } from './ui';
 export function ProjectCombobox({
   id = 'project-name',
   value,
+  designation,
   onChange,
   onPick,
   placeholder = 'Choisir dans la liste ou saisir…',
 }: {
   id?: string;
   value: string;
+  /** Current designation: tells apart entries sharing the same Projet code. */
+  designation?: string;
   onChange: (v: string) => void;
   onPick: (opt: ProjectOption) => void;
   placeholder?: string;
 }) {
+  const PROJECT_GROUPS = useEquipmentOptions();
+  const isSel = (it: ProjectOption) => it.code === value && (designation === undefined || it.designation === designation);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -31,10 +37,11 @@ export function ProjectCombobox({
       group: g.group,
       items: g.items.filter((it) => {
         const hay = `${it.code} ${it.label} ${it.designation}`.toLowerCase();
-        return words.every((w) => hay.includes(w));
+        // Numbers must start a word ("3" finds LEVEL 3, not 5553); text matches anywhere.
+        return words.every((w) => (/^\d+$/.test(w) ? new RegExp(`(^|[^0-9])${w}`).test(hay) : hay.includes(w)));
       }),
     })).filter((g) => g.items.length);
-  }, [query]);
+  }, [query, PROJECT_GROUPS]);
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
@@ -52,7 +59,7 @@ export function ProjectCombobox({
 
   const openList = () => {
     // Show the full list when the field already holds a choice; otherwise filter by what was typed.
-    const selectedIdx = PROJECT_GROUPS.flatMap((g) => g.items).findIndex((it) => it.code === value);
+    const selectedIdx = PROJECT_GROUPS.flatMap((g) => g.items).findIndex(isSel);
     setQuery(selectedIdx >= 0 ? '' : value);
     setActive(Math.max(0, selectedIdx));
     setOpen(true);
@@ -130,10 +137,10 @@ export function ProjectCombobox({
                 {g.items.map((it) => {
                   idx++;
                   const i = idx;
-                  const selected = it.code === value;
+                  const selected = isSel(it);
                   return (
                     <li
-                      key={it.label}
+                      key={`${it.label}-${i}`}
                       role="option"
                       aria-selected={selected}
                       data-idx={i}
@@ -156,7 +163,11 @@ export function ProjectCombobox({
               </ul>
             </li>
           ))}
-          {!flat.length && <li className="px-3 py-2 text-sm text-slate-500">Aucun résultat — le texte saisi sera utilisé tel quel.</li>}
+          {!flat.length && (
+            <li className="px-3 py-2 text-sm text-slate-500">
+              {PROJECT_GROUPS.length ? 'Aucun résultat — le texte saisi sera utilisé tel quel.' : 'Liste vide — importez vos équipements avec le bouton « Données ».'}
+            </li>
+          )}
         </ul>
       )}
     </div>

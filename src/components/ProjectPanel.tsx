@@ -12,6 +12,7 @@ export function ProjectPanel({ store }: { store: ProjectStore }) {
       <Field label="Projet *" htmlFor="project-name" hint="Tapez pour filtrer (tag, n° ou nom du bac), ou saisissez un nom libre.">
         <ProjectCombobox
           value={p.name}
+          designation={p.designation}
           onChange={(name) => store.updateProject({ name })}
           onPick={(o) => store.updateProject({ name: o.code, designation: o.designation })}
         />

@@ -71,6 +71,8 @@ export interface ExportSettings {
 
 export interface ProjectRecord {
   id: string;
+  /** User profile that owns the project (missing = created before profiles existed). */
+  ownerId?: string;
   name: string;
   /** Equipment designation, e.g. "SUMP TANK" (filled from the dropdown). */
   designation: string;

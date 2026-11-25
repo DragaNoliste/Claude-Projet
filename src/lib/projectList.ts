@@ -1,22 +1,28 @@
-/** Equipment list offered in the "Nom du projet" dropdown. Format: [No., Tank Name, Client Tag]. */
-export interface ProjectOption {
+/**
+ * Equipment lists offered in the "Projet" dropdown, one per user.
+ * Seed data only: each user can replace / extend their list with the import tool.
+ */
+
+/** One line of the list: No., Tank Name, Client Tag. */
+export interface EquipmentItem {
   no: string;
   name: string;
   tag: string;
-  /** Full line "No. | Tank Name | Client Tag" (used for display / search) */
+}
+
+export interface EquipmentGroup {
+  group: string;
+  items: EquipmentItem[];
+}
+
+/** Ready-to-use dropdown entry. */
+export interface ProjectOption extends EquipmentItem {
+  /** Full line "No. | Tank Name | Client Tag" (display / search) */
   label: string;
-  /** Written into "Projet": group + client tag, e.g. "PAP-M76AAR15" */
+  /** Written into "Projet", e.g. "PAP-M76AAR15" */
   code: string;
   /** Written into "Designation", e.g. "Sump Tank" */
   designation: string;
-}
-
-/** "SUMP TANK" -> "Sump Tank"; short acronyms (FSA) and mixed-case names are kept. */
-function niceCase(s: string): string {
-  return s
-    .split(' ')
-    .map((w) => (w.length > 3 && w === w.toUpperCase() ? w[0] + w.slice(1).toLowerCase() : w))
-    .join(' ');
 }
 
 export interface ProjectGroup {
@@ -24,7 +30,54 @@ export interface ProjectGroup {
   items: ProjectOption[];
 }
 
-const RAW: [string, [string, string, string][]][] = [
+export interface ListFormat {
+  /** Template for "Projet". Tokens: {groupe} {no} {nom} {tag} */
+  projectFormat: string;
+  /** Template for "Designation". Same tokens. */
+  designationFormat: string;
+  /** "SUMP TANK" -> "Sump Tank" for the {nom} token. */
+  niceCase: boolean;
+}
+
+/** Words kept in capitals by niceCase. */
+const ACRONYMS = new Set(['FSA', 'END', 'PAP', 'PAT', 'SMP', 'HP', 'LP', 'MP', 'TK', 'PSV', 'API', 'ASME', 'HDPE', 'PVC', 'PP', 'FRP', 'GRP', 'SS', 'CS']);
+
+/** "SUMP TANK" -> "Sump Tank", "DRY ACID TOWER TRAIN B" -> "Dry Acid Tower Train B".
+ *  Acronyms (FSA), single letters, words with digits (3VESSEL) and mixed case are kept. */
+export function niceCase(s: string): string {
+  return s
+    .split(' ')
+    .map((w) => (w.length > 1 && /^[A-ZÀ-Ý]+$/.test(w) && !ACRONYMS.has(w) ? w[0] + w.slice(1).toLowerCase() : w))
+    .join(' ');
+}
+
+export function applyFormat(tpl: string, group: string, it: EquipmentItem, nice: boolean): string {
+  return tpl
+    .replace(/\{groupe\}/gi, group)
+    .replace(/\{no\}/gi, it.no)
+    .replace(/\{nom\}/gi, nice ? niceCase(it.name) : it.name)
+    .replace(/\{tag\}/gi, it.tag)
+    .replace(/\s*-\s*$|^\s*-\s*/g, '') // drop dangling separators when a token is empty
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+export function buildOptions(groups: EquipmentGroup[], f: ListFormat): ProjectGroup[] {
+  return groups.map((g) => ({
+    group: g.group,
+    items: g.items.map((it) => ({
+      ...it,
+      label: [it.no, it.name, it.tag].filter(Boolean).join(' | '),
+      code: applyFormat(f.projectFormat, g.group, it, f.niceCase),
+      designation: applyFormat(f.designationFormat, g.group, it, f.niceCase),
+    })),
+  }));
+}
+
+type Raw = [string, [string, string, string][]][];
+const toGroups = (raw: Raw): EquipmentGroup[] => raw.map(([group, rows]) => ({ group, items: rows.map(([no, name, tag]) => ({ no, name, tag })) }));
+
+const KHALID_RAW: Raw = [
   [
     'PAP',
     [
@@ -113,14 +166,56 @@ const RAW: [string, [string, string, string][]][] = [
   ['PAT', [['5551-TC01', 'Sulfuric acid storage tank', 'M18AAR01']]],
 ];
 
-export const PROJECT_GROUPS: ProjectGroup[] = RAW.map(([group, rows]) => ({
-  group,
-  items: rows.map(([no, name, tag]) => ({
-    no,
-    name,
-    tag,
-    label: `${no} | ${name} | ${tag}`,
-    code: `${group}-${tag}`,
-    designation: niceCase(name),
-  })),
-}));
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const series = (no: string, name: string, prefix: string, count: number): [string, string, string][] =>
+  Array.from({ length: count }, (_, i) => [no, name, `${prefix}${pad(i + 1)}`]);
+
+const NAJIB_RAW: Raw = [
+  [
+    'CHEMITECS',
+    [
+      ['5553', 'INTER ACID TOWER TRAIN B', 'LEVEL 1'],
+      ['5553', 'INTER ACID TOWER TRAIN B', 'LEVEL 3'],
+      ['5553', 'INTER ACID TOWER TRAIN B', 'LEVEL 4'],
+      ['5553', 'FINAL ACID TOWER TRAIN B', 'LEVEL 1'],
+      ['5553', 'FINAL ACID TOWER TRAIN B', 'LEVEL 4'],
+      ['5553', 'FINAL ACID TOWER TRAIN B', 'LEVEL 5'],
+      ['5553', 'DRY ACID TOWER TRAIN B', 'LEVEL 1'],
+      ['5553', 'DRY ACID TOWER TRAIN B', 'LEVEL 2'],
+      ['5553', 'DRY ACID TOWER TRAIN B', 'LEVEL 3'],
+      ['5553', 'DRY ACID TOWER TRAIN B', 'LEVEL 4'],
+    ],
+  ],
+  ['MS HOPPERS', [...series('5546', 'HEATING COILS', 'IC', 8), ...series('5546', 'HEATING COILS', 'ID', 8)]],
+  ['CALGON CARBON', series('5560', '3VESSEL CELL-70-2525', 'Cell-', 41)],
+];
+
+export interface UserSeed extends ListFormat {
+  id: string;
+  name: string;
+  equipment: EquipmentGroup[];
+}
+
+/** Users created on first launch. */
+export const SEED_USERS: UserSeed[] = [
+  {
+    id: 'khalid',
+    name: 'KHALID',
+    equipment: toGroups(KHALID_RAW),
+    projectFormat: '{groupe}-{tag}', // PAP-M76AAR15
+    designationFormat: '{nom}', // Sump Tank
+    niceCase: true,
+  },
+  {
+    id: 'najib',
+    name: 'NAJIB',
+    equipment: toGroups(NAJIB_RAW),
+    projectFormat: '{groupe}-{no}', // CHEMITECS-5553
+    designationFormat: '{nom} - {tag}', // Inter Acid Tower Train B - LEVEL 1
+    niceCase: true,
+  },
+];
+
+/** Format used for users created later and for imported lists. */
+export const DEFAULT_FORMAT: ListFormat = { projectFormat: '{groupe}-{no}', designationFormat: '{nom} - {tag}', niceCase: true };

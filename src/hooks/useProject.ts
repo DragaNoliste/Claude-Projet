@@ -8,12 +8,18 @@ import { toast } from '../components/ui';
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|avif|tiff?)$/i;
 
-async function createProjectRecord(): Promise<ProjectRecord> {
+/** Projects saved before user profiles existed belong to Khalid. */
+export const LEGACY_OWNER = 'khalid';
+export const ownerOf = (p: Pick<ProjectRecord, 'ownerId'>) => p.ownerId || LEGACY_OWNER;
+const lastKey = (owner: string) => `lastProjectId:${owner}`;
+
+async function createProjectRecord(ownerId: string): Promise<ProjectRecord> {
   const saved = await db.kvGet<AnnotationStyle>('defaultStyle');
   const defaultStyle = saved?.layout ? saved : DEFAULT_STYLE;
   const now = Date.now();
   return {
     id: uid(),
+    ownerId,
     name: '',
     designation: '',
     date: todayISO(),
@@ -38,7 +44,7 @@ function normalize(rec: ProjectRecord): ProjectRecord {
   };
 }
 
-export function useProject() {
+export function useProject(userId: string | null) {
   const [project, setProject] = useState<ProjectRecord | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -48,13 +54,15 @@ export function useProject() {
   const projectRef = useRef<ProjectRecord | null>(null);
   projectRef.current = project;
   const dirty = useRef(false);
+  const userRef = useRef(userId);
+  userRef.current = userId;
 
   // ---------- Persistence
   const saveNow = useCallback(async (p: ProjectRecord | null = projectRef.current) => {
     if (!p) return;
     dirty.current = false;
     await db.putProject({ ...p, updatedAt: Date.now() });
-    await db.kvSet('lastProjectId', p.id);
+    await db.kvSet(lastKey(ownerOf(p)), p.id);
     setSaveState('saved');
   }, []);
 
@@ -103,7 +111,7 @@ export function useProject() {
       dirty.current = false;
       setProject(p);
       setCurrentId(p.photos[0]?.id ?? null);
-      await db.kvSet('lastProjectId', p.id);
+      await db.kvSet(lastKey(ownerOf(p)), p.id);
       const entries = await Promise.all(p.photos.map(async (ph) => [ph.id, await thumbUrlFor(ph.id)] as const));
       setThumbs(Object.fromEntries(entries));
       return true;
@@ -115,7 +123,7 @@ export function useProject() {
     const cur = projectRef.current;
     if (cur && !cur.name.trim() && !cur.site.trim() && !cur.photos.length) return false; // already a blank project
     if (dirty.current && cur) await saveNow(cur);
-    const p = await createProjectRecord();
+    const p = await createProjectRecord(userRef.current ?? LEGACY_OWNER);
     resetRuntime();
     setProject(p);
     setCurrentId(null);
@@ -123,23 +131,32 @@ export function useProject() {
     return true;
   }, [resetRuntime, saveNow]);
 
-  const initialized = useRef(false);
+  // Load the last project of the selected user (and again whenever the user changes).
+  const loadedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (initialized.current) return; // StrictMode double-invoke guard
-    initialized.current = true;
+    if (!userId || loadedFor.current === userId) return; // also guards StrictMode double-invoke
+    loadedFor.current = userId;
     (async () => {
+      if (dirty.current && projectRef.current) await saveNow(projectRef.current).catch(() => {});
       try {
-        const last = await db.kvGet<string>('lastProjectId');
-        if (last && (await loadProject(last))) return;
+        let last = await db.kvGet<string>(lastKey(userId));
+        if (!last && userId === LEGACY_OWNER) last = await db.kvGet<string>('lastProjectId'); // pre-users version
+        if (last) {
+          const rec = await db.getProject(last);
+          if (rec && ownerOf(rec) === userId && (await loadProject(last))) return;
+        }
       } catch {
         toast('Stockage local indisponible : les projets ne seront pas sauvegardés.', 'error');
       }
-      const p = await createProjectRecord();
+      const p = await createProjectRecord(userId);
+      resetRuntime();
+      dirty.current = false;
       setProject(p);
+      setCurrentId(null);
       saveNow(p).catch(() => {});
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   // ---------- Project fields
   const updateProject = useCallback(
